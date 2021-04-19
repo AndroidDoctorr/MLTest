@@ -1,0 +1,167 @@
+﻿@page "/textsamples"
+
+@using MLTest.Data
+@using MLTest.Services
+@using MLTest.Models
+@using PagedList
+
+@inject NavigationManager uriHelper
+@inject TextSampleService SampleService
+
+@if (samples == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        @if (!_showNewSampleForm)
+        {
+            <button class="niceButton" @onclick="ToggleNewSampleForm">+ New Sample</button>
+        }
+        else
+        {
+            <EditForm Model="@createModel" OnValidSubmit="@AddNewSample">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                Language:
+                <select class="niceSelect" @onchange="(e) => SetLang(e.Value.ToString())">
+                    @foreach (var lang in _languages)
+                    {
+                        <option value=@lang>@lang</option>
+                    }
+                </select>
+                Text:
+                <InputText id="createText" @bind-Value="createModel.Text" />
+
+                <button class="niceButton" type="submit">Save</button>
+                <button class="niceButton" @onclick="ToggleNewSampleForm">Cancel</button>
+            </EditForm>
+        }
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Lang</th>
+                    <th class="pl-5">Text</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (TextSampleListItem sample in samples)
+                {
+                    <tr>
+                        <td>@sample.Lang</td>
+                        <td>
+                            <button class="pr-4 showOnHover" @onclick="() => ToggleEdit(sample.Id)">
+                                <span class="oi oi-pencil center iconAdjust"></span>
+                            </button>
+                            @if (sample.Id == _editId)
+                            {
+                                { _editSample = sample; }
+                                <EditForm Model="@_editSample" OnValidSubmit="@EditSample" style="display: inline-block;">
+                                    <DataAnnotationsValidator />
+                                    <ValidationSummary />
+
+                                    <InputText id="editText" @bind-Value="sample.Text" />
+
+                                    <button type="submit">Save</button>
+                                </EditForm>
+                            }
+                            else
+                            {
+                                @sample.Text
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p>Page @_page</p>
+        <div class="bottom-bar">
+            @if (_page > 1)
+            {
+                <button class="niceButton" @onclick="PrevPage">Previous Page</button>
+            }
+            @if (_page < samples.PageCount)
+            {
+                <button class="niceButton float-right" @onclick="NextPage">Next Page</button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private IPagedList<TextSampleListItem> samples;
+    private TextSampleCreate createModel;
+    private TextSampleListItem _editSample;
+    private bool _showNewSampleForm = false;
+    private int _page = 1;
+    private int _editId = -1;
+    private readonly string[] _languages = { "en", "de", "tlh", "es", "it", "fr", "ru" };
+
+    private void ToggleNewSampleForm()
+    {
+        createModel = new TextSampleCreate()
+        {
+            Lang = _languages.ToList().First(),
+        };
+        _showNewSampleForm = !_showNewSampleForm;
+    }
+    private async void AddNewSample()
+    {
+        bool wasSaved = SampleService.CreateTextSample(createModel);
+        if (wasSaved)
+        {
+            _showNewSampleForm = false;
+            samples = await GetPage(_page);
+            StateHasChanged();
+        }
+    }
+
+    public void SetLang(string lang)
+    {
+        Console.WriteLine("Set Language: " + lang);
+        createModel.Lang = lang;
+    }
+
+    private async void EditSample()
+    {
+        await SampleService.EditSampleAsync(_editId, _editSample);
+        _editId = -1;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        samples = await GetPage(_page);
+    }
+
+    public void ToggleEdit(int id)
+    {
+        Console.WriteLine("Toggle Edit: " + id);
+        _editId = id;
+    }
+
+    public async Task NextPage()
+    {
+        samples = await GetPage(_page + 1);
+    }
+
+    public async Task PrevPage()
+    {
+        samples = await GetPage(_page - 1);
+    }
+
+    public async Task<IPagedList<TextSampleListItem>> GetPage(int page)
+    {
+        if (samples != null && page > samples.PageCount)
+        {
+            return await SampleService.GetSamplesAsync(_page);
+        }
+        else
+        {
+            _page = page;
+            return await SampleService.GetSamplesAsync(page);
+        }
+    }
+}

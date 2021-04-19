@@ -1,0 +1,39 @@
+.bottom-bar {
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.showOnHover {
+  opacity: 0;
+  background-color: white;
+  border: none;
+  box-shadow: 2px 2px 2px 2px grey;
+  border-radius: 0.25rem;
+  width: 32px;
+  height: 32px;
+  margin-right: 0.5rem;
+}
+
+.showOnHover:hover {
+  opacity: 1;
+}
+
+.iconAdjust {
+  left: 4px;
+}
+
+.niceButton {
+  background-color: white;
+  margin-bottom: 0.25rem;
+  border-radius: 4px;
+  border: thin solid gray;
+  box-shadow: 2px 2px darkgray;
+}
+
+.niceSelect {
+  margin-bottom: 0.25rem;
+  border-radius: 4px;
+  border: thin solid gray;
+  box-shadow: 2px 2px darkgrey;
+  padding: 0.25rem;
+}
